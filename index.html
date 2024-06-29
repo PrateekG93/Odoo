@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exam Management App</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <nav>
+        <ul>
+          <li><a href="#" @click.prevent="showView('login')">Login</a></li>
+          <li><a href="#" @click.prevent="showView('register')">Register</a></li>
+          <li v-if="currentUser && currentUser.authority === 'admin'" @click.prevent="showView('admin')">Admin</a></li>
+          <li v-if="currentUser && currentUser.authority === 'examiner' && isExaminerApproved" @click.prevent="showView('examiner')">Examiner</a></li>
+          <li v-if="currentUser && currentUser.authority === 'invigilator' && isInvigilatorApproved" @click.prevent="showView('invigilator')">Invigilator</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <div v-if="currentView === 'login'" class="container">
+        <h2>Login</h2>
+        <form @submit.prevent="handleLogin">
+          <input type="text" placeholder="Username" v-model="username">
+          <select v-model="authority">
+            <option v-for="auth in authorities" :value="auth">{{ auth }}</option>
+          </select>
+          <input type="password" placeholder="Password" v-model="password">
+          <button type="submit">Login</button>
+        </form>
+        <p>Don't have an account? <a href="#" @click.prevent="showView('register')">Register</a></p>
+      </div>
+
+      <div v-else-if="currentView === 'register'" class="container">
+        <h2>Register</h2>
+        <form @submit.prevent="handleRegister">
+          <input type="email" placeholder="Email" v-model="email">
+          <input type="text" placeholder="Username" v-model="username">
+          <input type="text" placeholder="Display Name" v-model="displayName">
+          <select v-model="authority">
+            <option v-for="auth in authorities" :value="auth">{{ auth }}</option>
+          </select>
+          <input type="password" placeholder="Password" v-model="password">
+          <button type="submit">Register</button>
+        </form>
+        <p>Already have an account? <a href="#" @click.prevent="showView('login')">Login</a></p>
+      </div>
+
+      <div v-else-if="currentView === 'admin'" class="container">
+        <h2>Admin Dashboard</h2>
+        <div class="file-upload">
+          <input type="file" accept=".pdf" @change="handleFileUpload">
+          <input type="text" placeholder="File Name" v-model="newFileName">
+          <button @click="uploadFile">Upload</button>
+        </div>
+        <ul class="file-list">
+          <li v-for="paper in examPapers" :key="paper.id">
+            <div class="file-actions">
+              <input type="text" v-model="paper.name" :disabled="!paper.editable">
+              <button @click="editFile(paper)">{{ paper.editable ? 'Save' : 'Edit' }}</button>
+              <button @click="deleteFile(paper.id)">Delete</button>
+            </div>
+            <div class="file-authority">
+              <span>Authority: </span>
+              <select v-model="paper.authority">
+                <option v-for="auth in authorities" :value="auth">{{ auth }}</option>
+              </select>
+            </div>
+            <a href="#" @click.prevent="handleViewEdit(paper.path)">{{ paper.name }}</a>
+          </li>
+        </ul>
+        <h3>Pending Registrations</h3>
+        <ul class="pending-registrations">
+          <li v-for="registration in pendingRegistrations" :key="registration.id">
+            <p>Username: {{ registration.username }}</p>
+            <p>Authority: {{ registration.authority }}</p>
+            <button @click="approveRegistration(registration.id)">Approve</button>
+            <button @click="rejectRegistration(registration.id)">Reject</button>
+          </li>
+        </ul>
+      </div>
+
+      <div v-else-if="currentView === 'examiner'" class="container">
+        <h2>Examiner Dashboard</h2>
+        <ul class="file-list">
+          <li v-for="paper in examPapers" :key="paper.id" v-if="paper.authority === 'examiner'">
+            <a href="#" @click.prevent="handleDownload(paper.path)">{{ paper.name }}</a>
+          </li>
+        </ul>
+      </div>
+
+      <div v-else-if="currentView === 'invigilator'" class="container">
+        <h2>Invigilator Dashboard</h2>
+        <ul class="file-list">
+          <li v-for="paper in examPapers" :key="paper.id" v-if="paper.authority === 'invigilator'">
+            <a href="#" @click.prevent="handleDownload(paper.path)">{{ paper.name }}</a>
+          </li>
+        </ul>
+      </div>
+    </main>
+
+    <footer>
+      <p>&copy; 2023 Exam Management App. All rights reserved.</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="app.js"></script>
+  </div>
+</body>
+</html>
